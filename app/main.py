@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Any
 
 
 class IntegerRange:
@@ -19,21 +20,23 @@ class IntegerRange:
 
     def __get__(
         self,
-        obj,
-        objtype=None,
-    ):
+        obj: Any,
+        objtype: type | None = None,
+    ) -> Any:
+        if obj is None:
+            return self
         return getattr(obj, self.protected_name)
 
     def __set__(
         self,
-        obj,
+        obj: Any,
         value: int,
     ) -> None:
-        if type(value) is not int:
-            raise TypeError()
+        if not isinstance(value, int):
+            raise TypeError
 
         if value < self.min_amount or value > self.max_amount:
-            raise ValueError()
+            raise ValueError
 
         setattr(obj, self.protected_name, value)
 
@@ -53,6 +56,10 @@ class Visitor:
 
 
 class SlideLimitationValidator(ABC):
+    age = IntegerRange(0, 1000)
+    weight = IntegerRange(0, 1000)
+    height = IntegerRange(0, 1000)
+
     def __init__(
         self,
         age: int,
@@ -64,27 +71,23 @@ class SlideLimitationValidator(ABC):
         self.height = height
 
 
-class ChildrenSlideLimitationValidator(
-    SlideLimitationValidator
-):
+class ChildrenSlideLimitationValidator(SlideLimitationValidator):
     age = IntegerRange(4, 14)
-    weight = IntegerRange(20, 50)
     height = IntegerRange(80, 120)
+    weight = IntegerRange(20, 50)
 
 
-class AdultSlideLimitationValidator(
-    SlideLimitationValidator
-):
+class AdultSlideLimitationValidator(SlideLimitationValidator):
     age = IntegerRange(14, 60)
-    weight = IntegerRange(50, 120)
     height = IntegerRange(120, 220)
+    weight = IntegerRange(50, 120)
 
 
 class Slide:
     def __init__(
         self,
         name: str,
-        limitation_class: type,
+        limitation_class: type[SlideLimitationValidator],
     ) -> None:
         self.name = name
         self.limitation_class = limitation_class
@@ -99,8 +102,6 @@ class Slide:
                 weight=visitor.weight,
                 height=visitor.height,
             )
-
+            return True
         except (TypeError, ValueError):
             return False
-
-        return True
